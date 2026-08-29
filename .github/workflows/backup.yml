@@ -1,0 +1,49 @@
+name: Daily backup + keep Supabase awake
+
+# Runs every day at 06:00 UTC. Two jobs in one:
+#  1. Downloads every name into backup/names.json and commits it to this repo,
+#     so the data also lives permanently in git history.
+#  2. The query itself counts as activity, which stops the free Supabase
+#     project from being paused for inactivity.
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read Supabase settings from config.js
+        id: cfg
+        run: |
+          URL=$(grep -oP 'url:\s*"\K[^"]+' config.js | head -1)
+          KEY=$(grep -oP 'anonKey:\s*"\K[^"]+' config.js | head -1)
+          echo "url=$URL" >> "$GITHUB_OUTPUT"
+          echo "::add-mask::$KEY"
+          echo "key=$KEY" >> "$GITHUB_OUTPUT"
+
+      - name: Download all names
+        run: |
+          mkdir -p backup
+          curl -sS --fail \
+            -H "apikey: ${{ steps.cfg.outputs.key }}" \
+            -H "Authorization: Bearer ${{ steps.cfg.outputs.key }}" \
+            "${{ steps.cfg.outputs.url }}/rest/v1/names?select=*&order=created_at.asc" \
+            -o backup/names.json
+          python3 -m json.tool backup/names.json > /dev/null
+          echo "Rows: $(python3 -c "import json;print(len(json.load(open('backup/names.json'))))")"
+
+      - name: Commit if changed
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add backup/names.json
+          git diff --cached --quiet || git commit -m "Backup names ($(date -u +%Y-%m-%d))"
+          git push
+
