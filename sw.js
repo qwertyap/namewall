@@ -1,10 +1,10 @@
-const CACHE = "namewall-v1";
+const CACHE = "namewall-v3";
 const ASSETS = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
-  "./firebase-config.js",
+  "./config.js",
   "./manifest.webmanifest",
   "./icons/icon.svg",
   "./icons/icon-maskable.svg"
@@ -33,24 +33,29 @@ self.addEventListener("fetch", (e) => {
       url.hostname.includes("supabase.co") ||
       url.hostname.includes("esm.sh")) return;
 
-  // App shell: network-first for navigations, cache-first for static assets.
+  // Navigations: always try the network first.
   if (req.mode === "navigate") {
     e.respondWith(fetch(req).catch(() => caches.match("./index.html")));
     return;
   }
 
-  e.respondWith(
-    caches.match(req).then((hit) =>
-      hit ||
-      fetch(req).then((res) => {
-        const copy = res.clone();
-        if (res.ok && url.origin === location.origin) {
-          caches.open(CACHE).then((c) => c.put(req, copy));
-        }
-        return res;
-      })
-    )
-  );
-});
+  // Same-origin assets: network-first so a new deploy is picked up instantly,
+  // falling back to cache only when offline.
+  if (url.origin === location.origin) {
+    e.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put(req, copy));
+          }
+          return res;
+        })
+        .catch(() => caches.match(req))
+    );
+    return;
+  }
 
+  e.respondWith(caches.match(req).then((hit) => hit || fetch(req)));
+});
 

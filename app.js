@@ -1,4 +1,8 @@
-import { firebaseConfig, COLLECTION, isConfigured } from "./firebase-config.js";
+import {
+  supabaseConfig, TABLE,
+  firebaseConfig, COLLECTION,
+  BACKEND
+} from "./config.js";
 
 /* ------------------------------- UI helpers ------------------------------ */
 const $ = (id) => document.getElementById(id);
@@ -75,7 +79,7 @@ function render(items) {
 }
 
 /* ------------------------------ Data layer ------------------------------- */
-// Two interchangeable backends: Firebase Firestore (shared with the world)
+// Interchangeable backends: Supabase (shared worldwide), Firebase Firestore,
 // or localStorage (offline demo, this device only).
 
 const LOCAL_KEY = "namewall.local";
@@ -96,6 +100,59 @@ const localStore = {
     window.dispatchEvent(new Event("storage"));
   }
 };
+
+async function makeSupabaseStore() {
+  const { createClient } = await import("https://esm.sh/@supabase/supabase-js@2.45.4");
+  const sb = createClient(supabaseConfig.url, supabaseConfig.anonKey, {
+    auth: { persistSession: false },
+    realtime: { params: { eventsPerSecond: 5 } }
+  });
+
+  const toItem = (r) => ({ name: r.name, createdAt: new Date(r.created_at).getTime() });
+
+  return {
+    mode: "supabase",
+    async subscribe(cb) {
+      let items = [];
+
+      const load = async () => {
+        const { data, error } = await sb
+          .from(TABLE)
+          .select("name, created_at")
+          .order("created_at", { ascending: false })
+          .limit(500);
+        if (error) {
+          console.error(error);
+          setStatus("error", "offline");
+          say("Could not load names: " + error.message, "err");
+          return;
+        }
+        items = data.map(toItem);
+        setStatus("live", "online");
+        cb(items);
+      };
+
+      await load();
+
+      sb.channel("names-feed")
+        .on("postgres_changes", { event: "INSERT", schema: "public", table: TABLE }, (payload) => {
+          items = [toItem(payload.new), ...items].slice(0, 500);
+          cb(items);
+        })
+        .subscribe();
+
+      // Safety net if the websocket drops.
+      setInterval(load, 20000);
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") load();
+      });
+    },
+    async add(name) {
+      const { error } = await sb.from(TABLE).insert({ name });
+      if (error) throw error;
+    }
+  };
+}
 
 async function makeFirebaseStore() {
   const [{ initializeApp }, fs] = await Promise.all([
@@ -180,9 +237,19 @@ window.addEventListener("offline", () => setStatus("offline", "offline"));
 
 /* ------------------------------ PWA install ------------------------------ */
 if ("serviceWorker" in navigator) {
-  window.addEventListener("load", () => {
-    navigator.serviceWorker.register("sw.js").catch(console.error);
+  window.addEventListener("load", async () => {
+    try {
+      const reg = await navigator.serviceWorker.register("sw.js", { updateViaCache: "none" });
+      reg.update();
+      // When a new version takes over, reload once so users never get stale code.
+      let refreshed = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (refreshed) return;
+        refreshed = true;
+        location.reload();
+      });
+    } catch (e) {
+      console.error(e);
+    }
   });
 }
-
-
