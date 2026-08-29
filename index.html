@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="theme-color" content="#4f46e5" />
+<meta name="description" content="Enter your name and see everyone who joined, from anywhere in the world." />
+<title>NameWall</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="icons/icon.svg" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-bar">
+    <h1>NameWall</h1>
+    <span id="status" class="status" title="Connection status">…</span>
+  </header>
+
+  <main>
+    <!-- Tab 1: Enter name -->
+    <section id="tab-enter" class="tab-panel active" role="tabpanel" aria-labelledby="btn-enter">
+      <div class="card">
+        <h2>Enter your name</h2>
+        <p class="muted">Anyone, anywhere can add a name. It shows up for everybody instantly.</p>
+        <form id="name-form" autocomplete="off">
+          <input
+            id="name-input"
+            type="text"
+            name="name"
+            placeholder="e.g. Ayush"
+            maxlength="40"
+            required
+            enterkeyhint="send"
+            autocomplete="name" />
+          <button id="submit-btn" type="submit">Add name</button>
+        </form>
+        <p id="form-msg" class="form-msg" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <!-- Tab 2: All names -->
+    <section id="tab-list" class="tab-panel" role="tabpanel" aria-labelledby="btn-list">
+      <div class="list-head">
+        <h2>All names <span id="count" class="pill">0</span></h2>
+        <button id="refresh-btn" class="ghost" type="button">Refresh</button>
+      </div>
+      <ul id="names" class="names"></ul>
+      <p id="empty" class="muted center">No names yet. Be the first!</p>
+    </section>
+  </main>
+
+  <nav class="tabbar" role="tablist">
+    <button id="btn-enter" class="tab active" role="tab" aria-selected="true" data-tab="tab-enter">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      <span>Enter</span>
+    </button>
+    <button id="btn-list" class="tab" role="tab" aria-selected="false" data-tab="tab-list">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+      <span>Names</span>
+    </button>
+  </nav>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
+
+
