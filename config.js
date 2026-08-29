@@ -12,8 +12,8 @@
 
 /* ------------------------------- Supabase -------------------------------- */
 export const supabaseConfig = {
-  url: "PASTE_SUPABASE_URL",       // https://xxxxxxxx.supabase.co
-  anonKey: "PASTE_SUPABASE_ANON_KEY"
+  url: "https://tbxleshvcanvrsnpyrum.supabase.co",
+  anonKey: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRieGxlc2h2Y2FudnJzbnB5cnVtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODgwMjA5NDUsImV4cCI6MjEwMzU5Njk0NX0.1YdsgDp4vLc4UxWhiNULlexsJlTvUBp49wDb7eGPnZI"
 };
 export const TABLE = "names";
 
@@ -35,4 +35,6 @@ export const supabaseReady = !unset(supabaseConfig.url) && !unset(supabaseConfig
 export const firebaseReady = !unset(firebaseConfig.apiKey) && !unset(firebaseConfig.projectId);
 
 export const BACKEND = supabaseReady ? "supabase" : firebaseReady ? "firebase" : "local";
+
+
 
