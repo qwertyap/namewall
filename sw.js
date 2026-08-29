@@ -27,8 +27,11 @@ self.addEventListener("fetch", (e) => {
   if (req.method !== "GET") return;
 
   const url = new URL(req.url);
-  // Never cache Firestore traffic - it must always hit the network.
-  if (url.hostname.includes("googleapis.com") || url.hostname.includes("firebaseio.com")) return;
+  // Never cache backend traffic - it must always hit the network.
+  if (url.hostname.includes("googleapis.com") ||
+      url.hostname.includes("firebaseio.com") ||
+      url.hostname.includes("supabase.co") ||
+      url.hostname.includes("esm.sh")) return;
 
   // App shell: network-first for navigations, cache-first for static assets.
   if (req.mode === "navigate") {
@@ -49,4 +52,5 @@ self.addEventListener("fetch", (e) => {
     )
   );
 });
+
 

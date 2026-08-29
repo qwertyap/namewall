@@ -135,21 +135,22 @@ async function makeFirebaseStore() {
 
 /* --------------------------------- Boot ---------------------------------- */
 (async function boot() {
-  if (isConfigured) {
+  if (BACKEND !== "local") {
     setStatus("connecting…");
     try {
-      store = await makeFirebaseStore();
+      store = BACKEND === "supabase" ? await makeSupabaseStore() : await makeFirebaseStore();
     } catch (e) {
       console.error(e);
       store = localStore;
       setStatus("local only", "offline");
+      say("Cloud backend unreachable — showing names saved on this device.", "err");
     }
   } else {
     store = localStore;
     setStatus("demo (local)", "offline");
-    say("Demo mode: names are saved only on this device. Add your Firebase keys in firebase-config.js to share them with everyone.");
+    say("Demo mode: names are saved only on this device. Add your Supabase or Firebase keys in config.js to share them with everyone.");
   }
-  store.subscribe(render);
+  await store.subscribe(render);
 })();
 
 form.addEventListener("submit", async (e) => {
@@ -183,4 +184,5 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("sw.js").catch(console.error);
   });
 }
+
 
