@@ -28,5 +28,12 @@ create policy "anyone can add a name"
 -- ...but nobody can edit or delete (no update/delete policy = denied).
 
 -- Stream new rows to every open app in real time.
-alter publication supabase_realtime add table public.names;
+-- Wrapped so re-running the file does not fail with
+-- "relation is already member of publication" (SQLSTATE 42710).
+do $$
+begin
+  alter publication supabase_realtime add table public.names;
+exception
+  when duplicate_object then null;
+end $$;
 
